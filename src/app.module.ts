@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { DebtsModule } from './modules/debts/debts.module';
@@ -32,7 +31,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     ProvidersModule,
     NotificationModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}
