@@ -8,11 +8,11 @@ import { Queue } from 'bullmq';
 import { Readable } from 'stream';
 import * as csv from 'csv-parser';
 import { File } from '@nest-lab/fastify-multer';
-import { FileDto } from '../dto/file-request.dto';
+import { FileDto } from '../../file/dto/file-request.dto';
 
 @Injectable()
-export class FileService {
-  private readonly logger = new Logger(FileService.name);
+export class DebitsService {
+  private readonly logger = new Logger(DebitsService.name);
 
   constructor(@Inject('CSV_QUEUE') private readonly queue: Queue) {}
 
@@ -27,7 +27,9 @@ export class FileService {
       .pipe(csv())
       .on('data', (row: FileDto) => {
         console.log(`ADICIONANDO NO JOB => ${JSON.stringify(row)}`);
-        this.queue.add('csv-processing', { row });
+        this.queue
+          .add('csv-processing', { row })
+          .catch((error) => this.logger.error(error));
       })
       .on('end', () => {
         this.logger.log('Processamento do CSV concluído.');

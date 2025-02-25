@@ -5,6 +5,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { DebtsModule } from './modules/debts/debts.module';
 import { BullMQModule } from './infra/bull/bull.module';
+import { FileModule } from './modules/file/file.module';
+import { NotificationModule } from './modules/notification/notification.module';
+import { ProvidersModule } from './infra/provider/providers.module';
 
 @Module({
   imports: [
@@ -22,7 +25,10 @@ import { BullMQModule } from './infra/bull/bull.module';
       synchronize: false,
     }),
     DebtsModule,
+    FileModule,
     BullMQModule,
+    ProvidersModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

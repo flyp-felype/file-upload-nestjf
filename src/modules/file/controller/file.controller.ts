@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor, File } from '@nest-lab/fastify-multer';
 import { ApiOperation, ApiConsumes, ApiBody } from '@nestjs/swagger';
-import { FileService } from '../services/file.service';
+import { FileService } from '../../file/services/file.service';
 @Controller('files')
 export class FileController {
   private readonly logger = new Logger(FileController.name);
@@ -28,8 +28,8 @@ export class FileController {
       },
     },
   })
-  uploadFile(@UploadedFile() file: File) {
-    this.fileService.processFile(file);
+  async uploadFile(@UploadedFile() file: File) {
+    await this.fileService.processFile(file);
     return {
       message: 'Arquivo recebido com sucesso',
       name: file.originalname,

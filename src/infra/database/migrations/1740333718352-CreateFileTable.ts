@@ -11,7 +11,8 @@ export class CreateFileTable1740333718352 implements MigrationInterface {
     debtAmount DECIMAL(10, 2) NOT NULL,
     debtDueDate DATE NOT NULL,
     invoiceGenerated BOOLEAN DEFAULT FALSE NOT NULL,
-    boletoId UUID
+    barcode varchar(255),
+    "sendNotification" BOOLEAN default false not null
 );`);
   }
 

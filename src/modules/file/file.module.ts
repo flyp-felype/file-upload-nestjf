@@ -1,0 +1,16 @@
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { FileController } from './controller/file.controller';
+import { FileService } from '../file/services/file.service';
+import { BullMQModule } from 'src/infra/bull/bull.module';
+import { CsvProcessorRowService } from '../file/worker/csvRow.processor';
+import { FileMetadata } from './entities/fileMetadata.entity';
+import { FileRow } from '../file/entities/fileRow.entity';
+
+@Module({
+  imports: [TypeOrmModule.forFeature([FileMetadata, FileRow]), BullMQModule],
+  providers: [FileService, CsvProcessorRowService],
+  controllers: [FileController],
+  exports: [TypeOrmModule],
+})
+export class FileModule {}

@@ -3,7 +3,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 @Entity('debts')
 export class Debts {
   @PrimaryGeneratedColumn()
-  id: string;
+  id: number;
 
   @Column({ type: 'uuid', unique: true })
   debtId: string;
@@ -26,6 +26,9 @@ export class Debts {
   @Column({ type: 'boolean', default: false })
   invoiceGenerated: boolean;
 
-  @Column({ type: 'uuid', nullable: true })
-  boletoId?: string;
+  @Column({ type: 'varchar', nullable: true, length: 255 })
+  barcode?: string;
+
+  @Column({ type: 'boolean', default: false })
+  sendNotification: boolean;
 }

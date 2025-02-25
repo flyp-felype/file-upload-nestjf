@@ -9,7 +9,7 @@ import { createRedisConnection } from 'src/config/redis.config';
     {
       provide: 'CSV_QUEUE',
       useFactory: () => {
-        return new Queue('csv-processing', {
+        return new Queue('debits-processing', {
           connection: createRedisConnection(),
         });
       },
@@ -19,7 +19,24 @@ import { createRedisConnection } from 'src/config/redis.config';
       useFactory: () =>
         new Queue('invoice-generate', { connection: createRedisConnection() }),
     },
+    {
+      provide: 'PROCESS_CSV_ROW',
+      useFactory: () =>
+        new Queue('process-csv-row', { connection: createRedisConnection() }),
+    },
+    {
+      provide: 'SEND_EMAIL_NOTIFICATION',
+      useFactory: () =>
+        new Queue('send-email-notification', {
+          connection: createRedisConnection(),
+        }),
+    },
   ],
-  exports: ['CSV_QUEUE', 'INVOICE_GENERATE'],
+  exports: [
+    'CSV_QUEUE',
+    'INVOICE_GENERATE',
+    'PROCESS_CSV_ROW',
+    'SEND_EMAIL_NOTIFICATION',
+  ],
 })
 export class BullMQModule {}
