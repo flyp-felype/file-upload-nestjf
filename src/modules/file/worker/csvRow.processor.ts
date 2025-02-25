@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Worker, Job } from 'bullmq';
-import { createRedisConnection } from 'src/config/redis.config';
+import { createRedisConnection } from '../../../config/redis.config';
 import { FileDto } from '../dto/file-request.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -16,6 +16,7 @@ import { FileMetadata } from '../entities/fileMetadata.entity';
 export class CsvProcessorRowService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(CsvProcessorRowService.name);
   private worker: Worker;
+
   constructor(
     @InjectRepository(FileRow)
     private fileRowRepository: Repository<FileRow>,
@@ -25,17 +26,7 @@ export class CsvProcessorRowService implements OnModuleInit, OnModuleDestroy {
     this.worker = new Worker(
       'process-csv-row',
       async (job: Job<{ row: FileDto; fileMetadata: FileMetadata }>) => {
-        this.logger.log('Processando linha:', job.data.row);
-
-        const { row, fileMetadata } = job.data;
-
-        const fileRow = this.fileRowRepository.create({
-          row: JSON.stringify(row),
-          fileMetadata: fileMetadata,
-          status: FileRowStatus.PENDING,
-        });
-
-        await this.fileRowRepository.save(fileRow);
+        await this.processJob(job);
       },
       { connection: createRedisConnection() },
     );
@@ -47,6 +38,20 @@ export class CsvProcessorRowService implements OnModuleInit, OnModuleDestroy {
     this.worker.on('failed', (job, err) => {
       this.logger.error(`Job ${job?.id} falhou:`, err);
     });
+  }
+
+  async processJob(job: Job<{ row: FileDto; fileMetadata: FileMetadata }>) {
+    this.logger.log('Processando linha:', job.data.row);
+
+    const { row, fileMetadata } = job.data;
+
+    const fileRow = this.fileRowRepository.create({
+      row: JSON.stringify(row),
+      fileMetadata: fileMetadata,
+      status: FileRowStatus.PENDING,
+    });
+
+    await this.fileRowRepository.save(fileRow);
   }
 
   onModuleDestroy() {

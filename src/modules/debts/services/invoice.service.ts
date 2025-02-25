@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Debts } from '../entities/debts.entity';
-import { BoletoProvider } from 'src/infra/provider/boletos/bancoBrasil/boleto.provider';
+import { BoletoProvider } from '../../../infra/provider/boletos/bancoBrasil/boleto.provider';
 import * as moment from 'moment';
 import { Queue } from 'bullmq';
 

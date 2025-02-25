@@ -16,7 +16,7 @@ export class CronService {
   ) {}
   @Cron(CronExpression.EVERY_30_SECONDS)
   async handleCron() {
-    this.logger.log('Executando tarefa agendada a cada 10 segundos');
+    this.logger.log('Executando tarefa agendada a cada 30 segundos');
     const fileRows = await this.fileRowRepository.find({
       where: { status: FileRowStatus.PENDING },
       take: 1000,

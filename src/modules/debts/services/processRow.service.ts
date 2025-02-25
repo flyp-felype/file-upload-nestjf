@@ -30,7 +30,6 @@ export class ProcessRowService {
 
       await this.validateRow(row, fileRow.id);
 
-      console.log('ROOOW ', row.debtId.trim());
       const existingDebt = await this.debtsRepository.findOne({
         where: { debtId: row.debtId.trim() },
       });

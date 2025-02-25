@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Worker, Job } from 'bullmq';
 import { createRedisConnection } from 'src/config/redis.config';
-import { InvoiceService } from '../services/invoce.service';
+import { InvoiceService } from '../services/invoice.service';
 @Injectable()
 export class InvoiceProcessorService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(InvoiceProcessorService.name);

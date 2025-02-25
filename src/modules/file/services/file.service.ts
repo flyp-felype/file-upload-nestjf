@@ -29,14 +29,12 @@ export class FileService {
     if (!file || !file.buffer) {
       throw new BadRequestException('Arquivo inválido ou ausente.');
     }
-    console.log(file);
     const fileMetadata = this.fileMetadaRepository.create({
       file_name: file.originalname,
       file_type: file.mimetype,
       total_register: 0,
       status: FileMetadataStatus.PENDING,
     });
-
     const fileMetadataSave = await this.fileMetadaRepository.save(fileMetadata);
 
     const stream = Readable.from(file.buffer);
