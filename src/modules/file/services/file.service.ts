@@ -6,9 +6,8 @@ import {
 } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { Readable } from 'stream';
-import * as csv from 'csv-parser';
 import { File } from '@nest-lab/fastify-multer';
-import { FileDto } from '../dto/file-request.dto';
+import { parse } from 'fast-csv';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
@@ -42,15 +41,18 @@ export class FileService {
 
     const stream = Readable.from(file.buffer);
 
-    stream
-      .pipe(csv())
-      .on('data', (row: FileDto) => {
-        this.queue
-          .add('process-csv-row', {
-            row,
-            fileMetadata: fileMetadataSave,
-          })
-          .catch((error) => this.logger.log(error));
+    const csvStream = parse({ headers: true })
+      .on('data', (row) => {
+        try {
+          this.queue
+            .add('process-csv-row', {
+              row,
+              fileMetadata: fileMetadataSave,
+            })
+            .catch((error) => this.logger.log(error));
+        } catch (error) {
+          this.logger.error('Erro ao processar linha:', error);
+        }
       })
       .on('end', () => {
         this.logger.log('Processamento do CSV concluído.');
@@ -58,5 +60,7 @@ export class FileService {
       .on('error', (error) => {
         this.logger.error('Erro ao processar o CSV:', error);
       });
+
+    stream.pipe(csvStream);
   }
 }

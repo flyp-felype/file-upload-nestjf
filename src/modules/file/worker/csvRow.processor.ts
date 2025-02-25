@@ -3,9 +3,8 @@ import {
   OnModuleInit,
   OnModuleDestroy,
   Logger,
-  Inject,
 } from '@nestjs/common';
-import { Worker, Job, Queue } from 'bullmq';
+import { Worker, Job } from 'bullmq';
 import { createRedisConnection } from 'src/config/redis.config';
 import { FileDto } from '../dto/file-request.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -20,7 +19,6 @@ export class CsvProcessorRowService implements OnModuleInit, OnModuleDestroy {
   constructor(
     @InjectRepository(FileRow)
     private fileRowRepository: Repository<FileRow>,
-    @Inject('CSV_QUEUE') private readonly queue: Queue,
   ) {}
 
   onModuleInit() {
@@ -37,11 +35,7 @@ export class CsvProcessorRowService implements OnModuleInit, OnModuleDestroy {
           status: FileRowStatus.PENDING,
         });
 
-        const fileRowSave = await this.fileRowRepository.save(fileRow);
-
-        this.queue
-          .add('debits-processing', { fileRow: fileRowSave })
-          .catch((error) => this.logger.error(error));
+        await this.fileRowRepository.save(fileRow);
       },
       { connection: createRedisConnection() },
     );

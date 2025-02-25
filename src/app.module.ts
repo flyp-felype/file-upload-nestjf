@@ -8,6 +8,7 @@ import { BullMQModule } from './infra/bull/bull.module';
 import { FileModule } from './modules/file/file.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { ProvidersModule } from './infra/provider/providers.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { ProvidersModule } from './infra/provider/providers.module';
       autoLoadEntities: true,
       synchronize: false,
     }),
+    ScheduleModule.forRoot(),
     DebtsModule,
     FileModule,
     BullMQModule,
