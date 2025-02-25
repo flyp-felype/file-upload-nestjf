@@ -20,6 +20,7 @@ Primeiro, clone o repositório para o seu ambiente local:
 git clone https://github.com/seu-usuario/seu-repositorio.git
 cd seu-repositorio
 ```
+*O arquivo .env.example contem o exemplo de variaveis de ambientes necessária para o projeto rodar* 
 
 ### 2. Instalar Dependências
 
@@ -47,6 +48,7 @@ docker-compose up -d
 
 Este comando irá criar e iniciar os containers necessários, além de configurar o banco de dados com as tabelas descritas no arquivo _init.sql_.
 
+
 ### 5. Executar a Aplicação em Modo de Desenvolvimento
 
 Com os containers em execução, inicie a aplicação em modo de desenvolvimento com o seguinte comando:
@@ -58,6 +60,28 @@ npm run start:dev
 
 A aplicação estará rodando e pronta para receber requisições.
 
+## Endpoints da API
+
+### Envio de Arquivo CSV
+
+O sistema possui um endpoint POST para receber arquivos CSV. Esse endpoint processa o arquivo, salva as linhas na tabela file_row e inicia o processamento assíncrono para gerar boletos e enviar notificações.
+
+- Endpoint: POST /files/upload
+- Body: FormData com o arquivo CSV.
+- Exemplo de uso:
+
+```bash
+curl --request POST \
+  --url 'http://localhost:3000/files/upload?=' \
+  --header 'Content-Type: multipart/form-data' \
+  --header 'User-Agent: insomnia/10.3.1' \
+  --form file=@/input.csv
+```
+### Documentação da API com Swagger
+
+A documentação da API está disponível através do Swagger. Após iniciar a aplicação, você pode acessar a documentação no seguinte endereço:
+
+Swagger UI: http://localhost:3000/docs
 
 ## Estrutura do Banco de Dados
 
