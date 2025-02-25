@@ -4,6 +4,9 @@ services:
 
   postgres:
     image: postgres:15
+    build:
+      context: .
+      dockerfile: Dockerfile.postgresql
     container_name: file-processing-db
     restart: always
     environment:

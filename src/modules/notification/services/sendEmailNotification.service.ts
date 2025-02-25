@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EmailProvider } from 'src/infra/provider/email/email.provider';
-import { Debts } from 'src/modules/debts/entities/debts.entity';
+import { EmailProvider } from '../../../infra/provider/email/email.provider';
+import { Debts } from '../../debts/entities/debts.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()

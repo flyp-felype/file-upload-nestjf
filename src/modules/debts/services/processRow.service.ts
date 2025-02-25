@@ -76,6 +76,7 @@ export class ProcessRowService {
   }
 
   private async createDebtAndQueue(row: FileDto): Promise<void> {
+    console.log('ROOOWW ', row);
     const newDebt = this.debtsRepository.create({
       debtId: row.debtId.trim(),
       name: row.name.trim(),
