@@ -37,7 +37,7 @@ export class DebitsProcessorService implements OnModuleInit, OnModuleDestroy {
     );
 
     this.worker.on('completed', (job) => {
-      console.log(`Job ${job.id} processado com sucesso.`);
+      this.logger.log(`Job ${job.id} processado com sucesso.`);
     });
 
     this.worker.on('failed', (job, err) => {
