@@ -1,7 +1,5 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { Readable } from 'stream';
-import { File } from '@nest-lab/fastify-multer';
-import { parse } from 'fast-csv';
+
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
@@ -9,10 +7,13 @@ import {
   FileMetadataStatus,
 } from '../entities/fileMetadata.entity';
 import { KafkaProducer } from '../../../infra/kafka/kafka.producer';
+import * as fs from 'fs';
+import * as path from 'path';
+import { File } from '@nest-lab/fastify-multer';
 
 @Injectable()
-export class FileService {
-  private readonly logger = new Logger(FileService.name);
+export class UploadService {
+  private readonly logger = new Logger(UploadService.name);
 
   constructor(
     @InjectRepository(FileMetadata)
@@ -26,6 +27,16 @@ export class FileService {
       throw new BadRequestException('Arquivo inválido ou ausente.');
     }
 
+    // Salvar o arquivo no storage local
+    // AQUI PODEMOS USAR UM S3
+    const uploadDir = path.join(__dirname, 'uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const filePath = path.join(uploadDir, file.originalname);
+    fs.writeFileSync(filePath, file.buffer);
+
     const fileMetadata = this.fileMetadaRepository.create({
       file_name: file.originalname,
       file_type: file.mimetype,
@@ -34,26 +45,12 @@ export class FileService {
     });
 
     const fileMetadataSave = await this.fileMetadaRepository.save(fileMetadata);
-    const stream = Readable.from(file.buffer);
 
-    const csvStream = parse({ headers: true })
-      .on('data', (row) => {
-        this.kafkaProducer
-          .sendMessage('process-csv-row', {
-            row,
-            fileMetadata: fileMetadataSave,
-          })
-          .catch((error) => {
-            this.logger.error('Erro ao enviar mensagem para o Kafka:', error);
-          });
-      })
-      .on('end', () => {
-        this.logger.log('Processamento do CSV concluído.');
-      })
-      .on('error', (error) => {
-        console.log('Erro ao processar o CSV:', error);
-      });
+    await this.kafkaProducer.sendMessage('file-ready-for-processing', {
+      fileMetadata: fileMetadataSave,
+      filePath,
+    });
 
-    stream.pipe(csvStream);
+    this.logger.log(`Arquivo salvo e evento publicado: ${file.originalname}`);
   }
 }
