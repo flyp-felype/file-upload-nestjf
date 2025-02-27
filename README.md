@@ -10,11 +10,11 @@
 
 5. **Agendamento de Tarefas (Cron Service):** Um serviço agendado (cron.service) é executado a cada 30 segundos para consultar o banco de dados em busca de registros com status *PENDING.* Esses registros são então selecionados para processamento do débito e boltos.
 
-6. **nserção na Tabela de Débitos e Geração de Boleto:** Os registros selecionados são inseridos em uma tabela específica para débitos. Após a inserção, uma nova mensagem é publicada em um tópico do Kafka dedicado à geração de boletos.
+6. **Inserção na Tabela de Débitos e Geração de Boleto:** Os registros selecionados são inseridos em uma tabela específica para débitos. Após a inserção, uma nova mensagem é publicada em um tópico do Kafka dedicado à geração de boletos.
 
-7. ***Geração do Boleto:* **Um consumer específico para a geração de boletos é acionado. Este consumer utiliza os dados recebidos para gerar o boleto bancário e, em seguida, publica uma mensagem em um tópico do Kafka dedicado à notificação.
+7. **Geração do Boleto:**Um consumer específico para a geração de boletos é acionado. Este consumer utiliza os dados recebidos para gerar o boleto bancário e, em seguida, publica uma mensagem em um tópico do Kafka dedicado à notificação.
 
-8. ***Notificação e Atualização de Status:*** O consumer de notificação processa a mensagem, enviando o boleto gerado por e-mail ao destinatário. Após o envio bem-sucedido, o status do débito é atualizado para NOTIFIED, indicando que o processo de notificação foi concluído.
+8. **Notificação e Atualização de Status:** O consumer de notificação processa a mensagem, enviando o boleto gerado por e-mail ao destinatário. Após o envio bem-sucedido, o status do débito é atualizado para NOTIFIED, indicando que o processo de notificação foi concluído.
 
 ### Débito técnicos
 
