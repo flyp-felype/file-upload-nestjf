@@ -3,13 +3,13 @@ import { CronService } from './cron.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { FileRow } from '../entities/fileRow.entity';
 import { Repository } from 'typeorm';
-import { Queue, Job } from 'bullmq';
 import { Logger } from '@nestjs/common';
+import { KafkaProducer } from '../../../infra/kafka/kafka.producer';
 
 describe('CronService', () => {
   let service: CronService;
   let fileRowRepository: Repository<FileRow>;
-  let queue: Queue;
+  let kafkaProducer: KafkaProducer;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -22,9 +22,9 @@ describe('CronService', () => {
           },
         },
         {
-          provide: 'CSV_QUEUE',
+          provide: KafkaProducer,
           useValue: {
-            add: jest.fn(),
+            sendMessage: jest.fn().mockResolvedValue(undefined),
           },
         },
         {
@@ -41,7 +41,7 @@ describe('CronService', () => {
     fileRowRepository = module.get<Repository<FileRow>>(
       getRepositoryToken(FileRow),
     );
-    queue = module.get<Queue>('CSV_QUEUE');
+    kafkaProducer = module.get<KafkaProducer>(KafkaProducer);
   });
 
   it('should be defined', () => {
@@ -55,7 +55,6 @@ describe('CronService', () => {
         { status: 'PENDING', created_at: new Date() } as FileRow,
       ];
       jest.spyOn(fileRowRepository, 'find').mockResolvedValue(mockFileRows);
-      const queueAddSpy = jest.spyOn(queue, 'add').mockResolvedValue({} as Job);
 
       await service.handleCron();
 
@@ -65,12 +64,8 @@ describe('CronService', () => {
         take: 1000,
         order: { created_at: 'DESC' },
       });
-      expect(queueAddSpy).toHaveBeenCalledTimes(mockFileRows.length);
-      mockFileRows.forEach((fileRow) => {
-        expect(queueAddSpy).toHaveBeenCalledWith('debits-processing', {
-          fileRow: fileRow,
-        });
-      });
+
+      expect(kafkaProducer.sendMessage).toHaveBeenCalled();
     });
   });
 });

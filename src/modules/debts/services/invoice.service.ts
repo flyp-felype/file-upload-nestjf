@@ -1,10 +1,10 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Debts } from '../entities/debts.entity';
 import { BoletoProvider } from '../../../infra/provider/boletos/bancoBrasil/boleto.provider';
 import * as moment from 'moment';
-import { Queue } from 'bullmq';
+import { KafkaProducer } from '../../../infra/kafka/kafka.producer';
 
 @Injectable()
 export class InvoiceService {
@@ -14,8 +14,7 @@ export class InvoiceService {
     @InjectRepository(Debts)
     private readonly debtsRepository: Repository<Debts>,
     private readonly boletoProvider: BoletoProvider,
-    @Inject('SEND_EMAIL_NOTIFICATION')
-    private readonly queue: Queue,
+    private readonly kafkaProducer: KafkaProducer,
   ) {}
 
   async handle(debtId: string): Promise<void> {
@@ -31,9 +30,13 @@ export class InvoiceService {
     }
   }
   private sendNotification(debts: Debts) {
-    this.queue
-      .add('send-email-notification', { debts })
-      .catch((error) => this.logger.error(error));
+    this.kafkaProducer
+      .sendMessage('send-email-notification', {
+        debts,
+      })
+      .catch((error) => {
+        this.logger.error('Erro ao enviar mensagem para o Kafka:', error);
+      });
   }
 
   private async findDebtById(debtId: string): Promise<Debts> {

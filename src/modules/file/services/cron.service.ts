@@ -1,16 +1,16 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Queue } from 'bullmq';
 import { Repository } from 'typeorm';
 import { FileRow, FileRowStatus } from '../entities/fileRow.entity';
+import { KafkaProducer } from '../../../infra/kafka/kafka.producer';
 
 @Injectable()
 export class CronService {
   private readonly logger = new Logger(CronService.name);
 
   constructor(
-    @Inject('CSV_QUEUE') private readonly queue: Queue,
+    private readonly kafkaProducer: KafkaProducer,
     @InjectRepository(FileRow)
     private fileRowRepository: Repository<FileRow>,
   ) {}
@@ -25,9 +25,13 @@ export class CronService {
 
     for (let index = 0; index < fileRows.length; index++) {
       const fileRow = fileRows[index];
-      this.queue
-        .add('debits-processing', { fileRow: fileRow })
-        .catch((error) => this.logger.error(error));
+      this.kafkaProducer
+        .sendMessage('debits-processing', {
+          fileRow: fileRow,
+        })
+        .catch((error) => {
+          this.logger.error('Erro ao enviar mensagem para o Kafka:', error);
+        });
     }
   }
 }

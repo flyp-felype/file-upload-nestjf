@@ -1,21 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Repository } from 'typeorm';
-import { Queue } from 'bullmq';
-import { ProcessRowService } from './processRow.service';
+import { DebitsService } from './debits.service';
 import { Debts } from '../entities/debts.entity';
 import { FileRow, FileRowStatus } from '../../file/entities/fileRow.entity';
 import { v4 as uuidv4 } from 'uuid';
+import { KafkaProducer } from '../../../infra/kafka/kafka.producer';
 
 describe('ProcessRowService', () => {
-  let service: ProcessRowService;
+  let service: DebitsService;
   let debtsRepository: Repository<Debts>;
   let fileRowRepository: Repository<FileRow>;
-  let queue: Queue;
+  let kafkaProducer: KafkaProducer;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        ProcessRowService,
+        DebitsService,
         {
           provide: 'DebtsRepository',
           useValue: {
@@ -31,18 +31,18 @@ describe('ProcessRowService', () => {
           },
         },
         {
-          provide: 'INVOICE_GENERATE',
+          provide: KafkaProducer,
           useValue: {
-            add: jest.fn().mockResolvedValue(undefined),
+            sendMessage: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],
     }).compile();
 
-    service = module.get<ProcessRowService>(ProcessRowService);
+    service = module.get<DebitsService>(DebitsService);
     debtsRepository = module.get<Repository<Debts>>('DebtsRepository');
     fileRowRepository = module.get<Repository<FileRow>>('FileRowRepository');
-    queue = module.get<Queue>('INVOICE_GENERATE');
+    kafkaProducer = module.get<KafkaProducer>(KafkaProducer);
   });
 
   it('should be defined', () => {
@@ -87,9 +87,7 @@ describe('ProcessRowService', () => {
         invoiceGenerated: false,
       });
 
-      expect(queue.add).toHaveBeenCalledWith('invoice-generate', {
-        debtId: uuid,
-      });
+      expect(kafkaProducer.sendMessage).toHaveBeenCalled();
 
       expect(fileRowRepository.update).toHaveBeenCalledWith(
         { id: mockFileRow.id },

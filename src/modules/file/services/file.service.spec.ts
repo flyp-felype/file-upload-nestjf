@@ -1,85 +1,78 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Job, Queue } from 'bullmq';
-import { File } from '@nest-lab/fastify-multer';
-import { Repository } from 'typeorm';
+import { FileService } from './file.service';
+import { KafkaProducer } from '../../../infra/kafka/kafka.producer';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import {
   FileMetadata,
   FileMetadataStatus,
 } from '../entities/fileMetadata.entity';
-import { FileService } from './file.service';
+import { Repository } from 'typeorm';
 
 describe('FileService', () => {
-  let service: FileService;
-  let fileMetadaRepository: Repository<FileMetadata>;
-  let queue: Queue;
-  const mockQueue = {
-    add: jest.fn().mockResolvedValue({}),
-  } as unknown as Queue;
+  let fileService: FileService;
+  let kafkaProducer: KafkaProducer;
+  let fileMetadataRepository: Repository<FileMetadata>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FileService,
         {
-          provide: 'PROCESS_CSV_ROW',
-          useValue: mockQueue,
+          provide: KafkaProducer,
+          useValue: {
+            sendMessage: jest.fn().mockResolvedValue(undefined),
+          },
         },
         {
-          provide: 'FileMetadataRepository',
+          provide: getRepositoryToken(FileMetadata),
           useValue: {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-            create: jest.fn().mockImplementation((data) => data),
-            save: jest.fn().mockResolvedValue({
-              id: 1,
-              file_name: 'test.csv',
-              file_type: 'text/csv',
-              total_register: 0,
-              status: FileMetadataStatus.PENDING,
-            }),
+            create: jest.fn().mockImplementation((dto) => dto),
+            save: jest.fn().mockImplementation((dto) => Promise.resolve(dto)),
           },
         },
       ],
     }).compile();
 
-    service = module.get<FileService>(FileService);
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    fileMetadaRepository = module.get<Repository<FileMetadata>>(
-      'FileMetadataRepository',
+    fileService = module.get<FileService>(FileService);
+    kafkaProducer = module.get<KafkaProducer>(KafkaProducer);
+    fileMetadataRepository = module.get<Repository<FileMetadata>>(
+      getRepositoryToken(FileMetadata),
     );
-    queue = module.get<Queue>('PROCESS_CSV_ROW');
   });
 
   it('should be defined', () => {
-    expect(service).toBeDefined();
+    expect(fileService).toBeDefined();
   });
 
-  describe('processFile', () => {
-    it('should process a valid CSV file', async () => {
-      const file: File = {
-        fieldname: 'file',
-        originalname: 'test.csv',
-        encoding: '7bit',
-        mimetype: 'text/csv',
-        buffer: Buffer.from('header1,header2\nvalue1,value2'),
-        size: 1024,
-        destination: '/tmp',
-        filename: 'test.csv',
-        path: '/tmp/test.csv',
-      };
+  it('should save the file metadata correctly', async () => {
+    const mockFile: any = {
+      originalname: 'test.csv',
+      mimetype: 'text/csv',
+      buffer: Buffer.from('id,name\n1,John\n2,Jane'),
+    };
 
-      const queueAddSpy = jest.spyOn(queue, 'add').mockResolvedValue({} as Job);
-      await service.processFile(file);
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      expect(fileMetadaRepository.create).toHaveBeenCalledWith({
-        file_name: 'test.csv',
-        file_type: 'text/csv',
-        total_register: 0,
-        status: FileMetadataStatus.PENDING,
-      });
+    await fileService.processFile(mockFile);
 
-      expect(fileMetadaRepository.save).toHaveBeenCalledTimes(1);
-
-      expect(queueAddSpy).toHaveBeenCalled();
+    expect(fileMetadataRepository.create).toHaveBeenCalledWith({
+      file_name: 'test.csv',
+      file_type: 'text/csv',
+      total_register: 0,
+      status: FileMetadataStatus.PENDING,
     });
+
+    expect(fileMetadataRepository.save).toHaveBeenCalled();
+  });
+
+  it('should call KafkaProducer for each row of the CS', async () => {
+    const mockFile: any = {
+      originalname: 'test.csv',
+      mimetype: 'text/csv',
+      buffer: Buffer.from('id,name\n1,John\n2,Jane'),
+    };
+
+    await fileService.processFile(mockFile);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(kafkaProducer.sendMessage).toHaveBeenCalled();
   });
 });

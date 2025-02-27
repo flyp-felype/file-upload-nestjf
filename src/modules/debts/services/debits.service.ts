@@ -1,16 +1,16 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Debts } from '../entities/debts.entity';
-import { Queue } from 'bullmq';
 import { FileRow, FileRowStatus } from '../../file/entities/fileRow.entity';
 import { FileDto } from '../../file/dto/file-request.dto';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
+import { KafkaProducer } from '../../../infra/kafka/kafka.producer';
 
 @Injectable()
-export class ProcessRowService {
-  private readonly logger = new Logger(ProcessRowService.name);
+export class DebitsService {
+  private readonly logger = new Logger(DebitsService.name);
 
   constructor(
     @InjectRepository(Debts)
@@ -19,8 +19,7 @@ export class ProcessRowService {
     @InjectRepository(FileRow)
     private readonly fileRowRepository: Repository<FileRow>,
 
-    @Inject('INVOICE_GENERATE')
-    private readonly queue: Queue,
+    private readonly kafkaProducer: KafkaProducer,
   ) {}
 
   async processRow(fileRow: FileRow): Promise<void> {
@@ -87,11 +86,11 @@ export class ProcessRowService {
     });
 
     await this.debtsRepository.save(newDebt);
-
-    await this.queue
-      .add('invoice-generate', { debtId: newDebt.debtId })
+    this.logger.log(`Enviando para fila invoice ${newDebt.debtId} `);
+    this.kafkaProducer
+      .sendMessage('invoice-generate', { debtId: newDebt.debtId })
       .catch((error) => {
-        this.logger.error('Error adding to queue:', error);
+        this.logger.error('Erro ao enviar mensagem para o Kafka:', error);
       });
   }
 

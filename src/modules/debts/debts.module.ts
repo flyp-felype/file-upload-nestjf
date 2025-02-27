@@ -1,32 +1,24 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Debts } from './entities/debts.entity';
-import { DebitsProcessorService } from './worker/debits.processor';
-import { ProcessRowService } from './services/processRow.service';
+import { DebitsService } from './services/debits.service';
 import { FileService } from '../file/services/file.service';
-import { BullMQModule } from 'src/infra/bull/bull.module';
-import { CsvProcessorRowService } from '../file/worker/csvRow.processor';
 import { FileRow } from '../file/entities/fileRow.entity';
 import { FileMetadata } from '../file/entities/fileMetadata.entity';
 import { InvoiceService } from './services/invoice.service';
-import { InvoiceProcessorService } from './worker/invoce.processor';
 import { ProvidersModule } from 'src/infra/provider/providers.module';
+import { KafkaModule } from 'src/infra/kafka/kafka.module';
+import { DebitsConsumer } from './consumers/debits.consumer';
+import { InvoiceConsumer } from './consumers/invoice.consumer';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Debts, FileRow, FileMetadata]),
-    BullMQModule,
     ProvidersModule,
+    forwardRef(() => KafkaModule),
   ],
-  providers: [
-    DebitsProcessorService,
-    InvoiceProcessorService,
-    ProcessRowService,
-    FileService,
-    CsvProcessorRowService,
-    InvoiceService,
-  ],
-  controllers: [],
+  providers: [DebitsService, FileService, InvoiceService],
+  controllers: [DebitsConsumer, InvoiceConsumer],
   exports: [TypeOrmModule],
 })
 export class DebtsModule {}

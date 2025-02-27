@@ -1,17 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Repository } from 'typeorm';
-import { Queue } from 'bullmq';
 import { Debts } from '../entities/debts.entity';
 import { BoletoProvider } from '../../../infra/provider/boletos/bancoBrasil/boleto.provider';
 import * as moment from 'moment';
 import { InvoiceService } from './invoice.service';
+import { KafkaProducer } from '../../../infra/kafka/kafka.producer';
 
 describe('InvoiceService', () => {
   let service: InvoiceService;
   let debtsRepository: Repository<Debts>;
   let boletoProvider: BoletoProvider;
-  let queue: Queue;
-
+  let kafkaProducer: KafkaProducer;
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -30,9 +29,9 @@ describe('InvoiceService', () => {
           },
         },
         {
-          provide: 'SEND_EMAIL_NOTIFICATION',
+          provide: KafkaProducer,
           useValue: {
-            add: jest.fn().mockResolvedValue(undefined),
+            sendMessage: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],
@@ -41,7 +40,7 @@ describe('InvoiceService', () => {
     service = module.get<InvoiceService>(InvoiceService);
     debtsRepository = module.get<Repository<Debts>>('DebtsRepository');
     boletoProvider = module.get<BoletoProvider>(BoletoProvider);
-    queue = module.get<Queue>('SEND_EMAIL_NOTIFICATION');
+    kafkaProducer = module.get<KafkaProducer>(KafkaProducer);
   });
 
   it('should be defined', () => {
@@ -67,17 +66,14 @@ describe('InvoiceService', () => {
         amount: 100,
       };
 
-      // Mock do findOne
       jest.spyOn(debtsRepository, 'findOne').mockResolvedValue(mockDebt);
 
-      // Mock do generateBoleto
       jest
         .spyOn(boletoProvider, 'generateBoleto')
         .mockResolvedValue(mockBoleto);
 
       await service.handle('123');
 
-      // Verifica se o boleto foi gerado
       expect(boletoProvider.generateBoleto).toHaveBeenCalledWith({
         amount: mockDebt.debtAmount,
         payerName: mockDebt.name,
@@ -85,16 +81,12 @@ describe('InvoiceService', () => {
         dueDate: moment(mockDebt.debtDueDate).toDate(),
       });
 
-      // Verifica se a dívida foi atualizada
       expect(debtsRepository.update).toHaveBeenCalledWith(
         { id: mockDebt.id },
         { invoiceGenerated: true, barcode: mockBoleto.barcode },
       );
 
-      // Verifica se a notificação foi enviada
-      expect(queue.add).toHaveBeenCalledWith('send-email-notification', {
-        debts: mockDebt,
-      });
+      expect(kafkaProducer.sendMessage).toHaveBeenCalled();
     });
 
     it('should throw an error if debt is not found', async () => {

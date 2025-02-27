@@ -70,7 +70,7 @@ O sistema possui um endpoint POST para receber arquivos CSV. Esse endpoint proce
 - Body: FormData com o arquivo CSV.
 - Exemplo de uso:
 
-```bash
+```curl
 curl --request POST \
   --url 'http://localhost:3000/files/upload?=' \
   --header 'Content-Type: multipart/form-data' \
@@ -139,8 +139,4 @@ CREATE TABLE IF NOT EXISTS file_row (
 );
 ```
 
-## Processamento de Filas com BullMQ
-
-O sistema utiliza o BullMQ para gerenciar filas de processamento. 
-
-Quando um arquivo é enviado para o sistema, as linhas são processadas assincronamente e salvas na tabela file_row. Após o processamento, os boletos são gerados e as notificações são enviadas aos usuários, caso necessário.
+## Processamento de Filas com Kafka
