@@ -20,8 +20,7 @@ export class FileRowConsumer {
       this.logger.log(`Processando linha do CSV: ${JSON.stringify(message)}`);
 
       const filePath = message.filePath;
-      // Tamanho do chunk (1 MB por padrão)
-      const CHUNK_SIZE = 1024 * 1024; // 1 MB
+      const CHUNK_SIZE = 1024 * 1024;
       const buffer = Buffer.alloc(CHUNK_SIZE);
       const fileDescriptor = fs.openSync(filePath, 'r');
 
@@ -29,7 +28,6 @@ export class FileRowConsumer {
       let position = 0;
       let remainingData = '';
 
-      // Lê o arquivo em chunks
       while (
         (bytesRead = fs.readSync(
           fileDescriptor,
@@ -67,7 +65,6 @@ export class FileRowConsumer {
 
         stream.pipe(csvStream);
 
-        // Verifica se há dados restantes (linha incompleta)
         const lastNewlineIndex = chunkData.lastIndexOf('\n');
         if (
           lastNewlineIndex !== -1 &&
@@ -79,7 +76,6 @@ export class FileRowConsumer {
         }
       }
 
-      // Fecha o arquivo após a leitura
       fs.closeSync(fileDescriptor);
     } catch (error) {
       this.logger.error(error);
