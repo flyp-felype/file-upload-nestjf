@@ -1,17 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { FileController } from './file.controller';
-import { FileService } from '../../file/services/file.service';
 import { File } from '@nest-lab/fastify-multer';
+import { UploadService } from '../services/upload.service';
 describe('FileController', () => {
   let controller: FileController;
-  let fileService: FileService;
+  let uploadService: UploadService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [FileController],
       providers: [
         {
-          provide: FileService,
+          provide: UploadService,
           useValue: {
             processFile: jest.fn().mockResolvedValue(undefined),
           },
@@ -20,7 +20,7 @@ describe('FileController', () => {
     }).compile();
 
     controller = module.get<FileController>(FileController);
-    fileService = module.get<FileService>(FileService);
+    uploadService = module.get<UploadService>(UploadService);
   });
 
   it('should be defined', () => {
@@ -36,7 +36,7 @@ describe('FileController', () => {
 
       const result = await controller.uploadFile(mockFile);
 
-      expect(fileService.processFile).toHaveBeenCalledWith(mockFile);
+      expect(uploadService.processFile).toHaveBeenCalledWith(mockFile);
       expect(result).toEqual({
         message: 'Arquivo recebido com sucesso',
         name: 'testfile.txt',
@@ -50,7 +50,7 @@ describe('FileController', () => {
       } as File;
 
       jest
-        .spyOn(fileService, 'processFile')
+        .spyOn(uploadService, 'processFile')
         .mockRejectedValue(new Error('Processing failed'));
 
       await expect(controller.uploadFile(mockFile)).rejects.toThrow(
