@@ -2,7 +2,6 @@ import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Debts } from './entities/debts.entity';
 import { DebitsService } from './services/debits.service';
-import { FileService } from '../file/services/file.service';
 import { FileRow } from '../file/entities/fileRow.entity';
 import { FileMetadata } from '../file/entities/fileMetadata.entity';
 import { InvoiceService } from './services/invoice.service';
@@ -17,7 +16,7 @@ import { InvoiceConsumer } from './consumers/invoice.consumer';
     ProvidersModule,
     forwardRef(() => KafkaModule),
   ],
-  providers: [DebitsService, FileService, InvoiceService],
+  providers: [DebitsService, InvoiceService],
   controllers: [DebitsConsumer, InvoiceConsumer],
   exports: [TypeOrmModule],
 })

@@ -1,3 +1,26 @@
+## Funcionamento do Sistema
+
+1. *Upload do Arquivo:* O processo inicia com o upload do arquivo através de um endpoint. O arquivo é recebido e validado pelo servidor.
+
+2. *Armazenamento Temporário:* Após a validação, o arquivo é armazenado temporariamente em um sistema de armazenamento local. Para maior escalabilidade e resiliência, pode-se integrar um serviço de armazenamento em nuvem, como Amazon S3, Google Cloud Storage ou Azure Blob Storage.
+
+3. *Notificação via Kafka:* Uma vez que o arquivo é armazenado com sucesso, uma mensagem é publicada em um tópico do  Kafka.
+
+4. *Processamento do Arquivo:* Um consumer do Kafka, responsável por processar o arquivo, é acionado. Este consumer realiza a leitura do arquivo, aplica as regras de negócio necessárias e envia os dados processados para uma fila de persistência.
+
+5. *Agendamento de Tarefas (Cron Service):* Um serviço agendado (cron.service) é executado a cada 30 segundos para consultar o banco de dados em busca de registros com status *PENDING.* Esses registros são então selecionados para processamento do débito e boltos.
+
+6. *Inserção na Tabela de Débitos e Geração de Boleto:* Os registros selecionados são inseridos em uma tabela específica para débitos. Após a inserção, uma nova mensagem é publicada em um tópico do Kafka dedicado à geração de boletos.
+
+7. *Geração do Boleto:* Um consumer específico para a geração de boletos é acionado. Este consumer utiliza os dados recebidos para gerar o boleto bancário e, em seguida, publica uma mensagem em um tópico do Kafka dedicado à notificação.
+
+8. *Notificação e Atualização de Status:* O consumer de notificação processa a mensagem, enviando o boleto gerado por e-mail ao destinatário. Após o envio bem-sucedido, o status do débito é atualizado para NOTIFIED, indicando que o processo de notificação foi concluído.
+
+### Débito técnicos
+
+1. Entendo que na geração de boleto podemos aplicar o designer patters de Factory com Strategy.
+
+2. Por depender de sistemas externos para geração de cobrança usaria também um Adapter, assim integrar sistemas externos sem muita dor de cabeça.
 
 ## Pré-requisitos
 
@@ -139,4 +162,3 @@ CREATE TABLE IF NOT EXISTS file_row (
 );
 ```
 
-## Processamento de Filas com Kafka

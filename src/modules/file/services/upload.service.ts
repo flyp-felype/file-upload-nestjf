@@ -7,9 +7,8 @@ import {
   FileMetadataStatus,
 } from '../entities/fileMetadata.entity';
 import { KafkaProducer } from '../../../infra/kafka/kafka.producer';
-import * as fs from 'fs';
-import * as path from 'path';
 import { File } from '@nest-lab/fastify-multer';
+import { FileStorageService } from './fileStorage.service.spec';
 
 @Injectable()
 export class UploadService {
@@ -18,7 +17,7 @@ export class UploadService {
   constructor(
     @InjectRepository(FileMetadata)
     private fileMetadaRepository: Repository<FileMetadata>,
-
+    private readonly fileStorageService: FileStorageService,
     private readonly kafkaProducer: KafkaProducer,
   ) {}
 
@@ -29,13 +28,7 @@ export class UploadService {
 
     // Salvar o arquivo no storage local
     // AQUI PODEMOS USAR UM S3
-    const uploadDir = path.join(__dirname, 'uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    const filePath = path.join(uploadDir, file.originalname);
-    fs.writeFileSync(filePath, file.buffer);
+    const filePath = this.fileStorageService.saveFile(file);
 
     const fileMetadata = this.fileMetadaRepository.create({
       file_name: file.originalname,
