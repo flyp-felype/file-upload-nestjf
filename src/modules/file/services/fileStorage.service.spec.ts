@@ -1,24 +1,60 @@
-import { Injectable } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { FileStorageService } from './fileStorage.service';
 import * as fs from 'fs';
 import * as path from 'path';
 import { File } from '@nest-lab/fastify-multer';
 
-@Injectable()
-export class FileStorageService {
-  private readonly uploadDir = path.join(__dirname, 'uploads');
+describe('FileStorageService', () => {
+  let service: FileStorageService;
 
-  saveFile(file: File): string {
-    if (!file || !file.buffer) {
-      throw new Error('Arquivo inválido ou ausente.');
+  const mockUploadDir = path.join(__dirname, 'uploads');
+
+  const mockFile: File = {
+    fieldname: 'file',
+    originalname: 'test.csv',
+    encoding: '7bit',
+    mimetype: 'text/csv',
+    buffer: Buffer.from('test,1,2,3'),
+    size: 123,
+  };
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [FileStorageService],
+    }).compile();
+
+    service = module.get<FileStorageService>(FileStorageService);
+
+    if (fs.existsSync(mockUploadDir)) {
+      fs.rmdirSync(mockUploadDir, { recursive: true });
     }
+  });
 
-    if (!fs.existsSync(this.uploadDir)) {
-      fs.mkdirSync(this.uploadDir, { recursive: true });
+  afterEach(() => {
+    if (fs.existsSync(mockUploadDir)) {
+      fs.rmdirSync(mockUploadDir, { recursive: true });
     }
+  });
 
-    const filePath = path.join(this.uploadDir, file.originalname);
-    fs.writeFileSync(filePath, file.buffer);
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
 
-    return filePath;
-  }
-}
+  describe('saveFile', () => {
+    it('should save the file in the upload directory and return the path', () => {
+      const filePath = service.saveFile(mockFile);
+
+      expect(fs.existsSync(filePath)).toBeTruthy();
+      expect(filePath).toBe(path.join(mockUploadDir, mockFile.originalname));
+    });
+
+    it('should create the upload directory if it does not exist', () => {
+      expect(fs.existsSync(mockUploadDir)).toBeFalsy();
+
+      const filePath = service.saveFile(mockFile);
+
+      expect(fs.existsSync(mockUploadDir)).toBeTruthy();
+      expect(filePath).toBe(path.join(mockUploadDir, mockFile.originalname));
+    });
+  });
+});

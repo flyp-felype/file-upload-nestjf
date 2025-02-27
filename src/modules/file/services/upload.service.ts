@@ -8,7 +8,7 @@ import {
 } from '../entities/fileMetadata.entity';
 import { KafkaProducer } from '../../../infra/kafka/kafka.producer';
 import { File } from '@nest-lab/fastify-multer';
-import { FileStorageService } from './fileStorage.service.spec';
+import { FileStorageService } from './fileStorage.service';
 
 @Injectable()
 export class UploadService {

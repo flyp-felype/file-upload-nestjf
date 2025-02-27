@@ -8,7 +8,7 @@ import { KafkaModule } from 'src/infra/kafka/kafka.module';
 import { ProcessCsvRowConsumer } from './consumers/processCsvRow.consumer';
 import { UploadService } from './services/upload.service';
 import { FileRowConsumer } from './consumers/fileRow.consumer';
-import { FileStorageService } from './services/fileStorage.service.spec';
+import { FileStorageService } from './services/fileStorage.service';
 
 @Module({
   imports: [
