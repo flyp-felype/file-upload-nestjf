@@ -13,7 +13,7 @@ export class InvoiceConsumer {
         throw new Error('Messagem do kafka indisponívle');
       }
 
-      this.logger.log(`Processando o boleo: ${JSON.stringify(message)}`);
+      this.logger.log(`Processando o boleto: ${JSON.stringify(message)}`);
 
       await this.invoiceService.handle(message.debtId);
     } catch (error) {
